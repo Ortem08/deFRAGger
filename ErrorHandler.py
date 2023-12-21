@@ -1,7 +1,6 @@
 import random
 
-import ImageTools
-
+from DirectoryParser import DirectoryParser
 from FatHandler import FatHandler
 from IndexedEntryInfo import IndexedEntryInfo
 
@@ -16,10 +15,10 @@ class ErrorHandler:
         self.indexed_files_to_delete = set()
 
     def check_differences_in_fats(self):
-        info = self.fat_handler.fat_entity
-        for i in range(info.count_of_clusters):
+        fat_entity = self.fat_handler.fat_entity
+        for i in range(fat_entity.clusters_count):
             value_in_first_fat = self.fat_handler.get_cluster_value_in_fat(i, 0)
-            for j in range(info.BPB_NumFATs):
+            for j in range(fat_entity.BPB_NumFATs):
                 if value_in_first_fat != self.fat_handler.get_cluster_value_in_fat(i, j):
                     self.different_clusters.append(i)
 
@@ -33,10 +32,10 @@ class ErrorHandler:
 
             directory = {}
             for entity in list_values:
-                if entity.dir_entry_info.name in directory:
+                if entity.directory_entry_info.name in directory:
                     self.looped_files.append(entity)
                 else:
-                    directory[entity.dir_entry_info.name] = entity
+                    directory[entity.directory_entry_info.name] = entity
 
             if len(directory):
                 self.intersecting_files.append(list(directory.values()))
@@ -46,7 +45,7 @@ class ErrorHandler:
     def clear_fat_table(self, indexed_table: dict) -> bool:
         fat_entity = self.fat_handler.fat_entity
         unused_clusters = []
-        for i in range(2, fat_entity.count_of_clusters):
+        for i in range(2, fat_entity.clusters_count):
             if (self.fat_handler.get_cluster_value_in_main_fat(i) != 0 and i not in indexed_table) or \
                     self.is_cluster_of_file_to_delete(i, indexed_table):
                 self.fat_handler.write_cluster_value_in_all_tables(0, i)
@@ -60,11 +59,11 @@ class ErrorHandler:
             return False
         if type(indexed_table[cluster_number]) == list:
             for entry in indexed_table[cluster_number]:
-                if entry.dir_entry_info.name in self.indexed_files_to_delete:
+                if entry.directory_entry_info.name in self.indexed_files_to_delete:
                     return True
             return False
         else:
-            return indexed_table[cluster_number].dir_entry_info.name in self.indexed_files_to_delete
+            return indexed_table[cluster_number].directory_entry_info.name in self.indexed_files_to_delete
 
     def repair_differences_fats(self, correct_table_number: int) -> None:
         for cluster in self.different_clusters:
@@ -78,18 +77,18 @@ class ErrorHandler:
         self.different_clusters = []
 
     def repair_looped_files(self) -> None:
-        dir_parser = ImageTools.DirectoryParser(self.fat_handler)
+        dir_parser = DirectoryParser(self.fat_handler)
         for entry in self.looped_files:
-            dir_parser.delete_entry_in_directory(entry.dir_entry_info.entry_point)
-            self.indexed_files_to_delete.add(entry.dir_entry_info.name)
+            dir_parser.delete_entry_in_directory(entry.directory_entry_info.entry_point)
+            self.indexed_files_to_delete.add(entry.directory_entry_info.name)
 
         self.looped_files = []
 
     def repair_intersecting_files(self) -> None:
-        directory_parser = ImageTools.DirectoryParser(self.fat_handler)
+        directory_parser = DirectoryParser(self.fat_handler)
         for entries_list in self.intersecting_files:
             for entry in entries_list:
-                directory_parser.delete_entry_in_directory(entry.dir_entry_info.entry_point)
-                self.indexed_files_to_delete.add(entry.dir_entry_info.name)
+                directory_parser.delete_entry_in_directory(entry.directory_entry_info.entry_point)
+                self.indexed_files_to_delete.add(entry.directory_entry_info.name)
 
         self.intersecting_files = []

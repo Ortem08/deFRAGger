@@ -4,8 +4,11 @@ class FileHandler:
         self.pointer = 0
         self.open(filename)
 
+    def __del__(self):
+        self.file.close()
+
     def open(self, filename):
-        self.file = open(filename, 'rb')
+        self.file = open(filename, 'rb+')
 
     def close(self):
         self.file.close()

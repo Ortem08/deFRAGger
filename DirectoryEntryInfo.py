@@ -1,6 +1,12 @@
+from Attribute import Attribute
+
+
 class DirectoryEntryInfo:
-    def __init__(self, name: str, attr: int or None, first_cluster_num: int, entry_point: int):
+    def __init__(self, name,
+                 attribute: int or None,
+                 first_cluster_number: int,
+                 entry_point: int):
         self.name = name
-        self.attr = attribute_parser(attr)
-        self.first_cluster_num = first_cluster_num
+        self.attribute = Attribute.attribute_parser(attribute)
+        self.first_cluster_number = first_cluster_number
         self.entry_point = entry_point
