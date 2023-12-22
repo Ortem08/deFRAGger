@@ -1,6 +1,11 @@
 class Attribute:
-    def __init__(self, is_archive: bool, is_directory: bool, is_volume: bool,
-                 is_system: bool, is_hidden: bool, is_read_only: bool):
+    def __init__(self,
+                 is_archive: bool,
+                 is_directory: bool,
+                 is_volume: bool,
+                 is_system: bool,
+                 is_hidden: bool,
+                 is_read_only: bool):
         self.is_archive = is_archive
         self.is_directory = is_directory
         self.is_volume_id = is_volume

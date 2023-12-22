@@ -61,7 +61,7 @@ class ErrorCreator:
             set_of_files = self.file_system.get_all_directory_entries_set()
 
             for dir_entry_info in set_of_files:
-                if dir_entry_info.name.strip() == name_dir.strip() and dir_entry_info.attribute.is_directory():
+                if dir_entry_info.name.strip() == name_dir.strip() and dir_entry_info.attribute.is_directory:
                     dir_entry_point = self.fat_handler.get_cluster_entry_in_data(dir_entry_info.first_cluster_number)
                     break
             else:

@@ -13,7 +13,7 @@ from FileSystem import FileSystem
 from Fragger import Fragger
 
 
-def error_handler(file_system: FileSystem, error_handler: ErrorHandler):
+def handle_errors(file_system: FileSystem, error_handler: ErrorHandler):
     if len(error_handler.different_clusters) != 0:
         print("Таблицы FAT различаются", file=stderr)
         fat_nums = [i for i in range(file_system.get_fat_handler().fat_entity.BPB_NumFATs)]
@@ -64,34 +64,31 @@ def main(parsed_args):
     file_system_of_image = parse_fat(file_handler)
     print(file_system_of_image.get_name_type_of_fat(), end='\n')
 
-    error_handler(file_system_of_image, file_system_of_image.get_error_handler())
+    handle_errors(file_system_of_image, file_system_of_image.get_error_handler())
 
-    if parsed_args.type_action == 'fragmentation':
+    if parsed_args.action_type == 'fragmentation':
         print(f'Fragmentation (BEFORE): ~{int(get_info_about_fragmentation(file_system_of_image.get_fat_handler()))}%')
+        print(file_system_of_image.get_indexed_fat_table())
         fragger = Fragger(file_system_of_image, file_handler, Random())
         fragger.fragmentate(1000)
+        print(file_system_of_image.get_indexed_fat_table())
 
-    elif parsed_args.type_action == 'defragmentation':
+    elif parsed_args.action_type == 'defragmentation':
         defragger = Defragger(file_system_of_image, file_handler)
         defragger.defragmentation()
+        print(file_system_of_image.get_indexed_fat_table())
 
-    elif parsed_args.type_action == 'error_fat_table':
+    elif parsed_args.action_type == 'error_fat_table':
         error = ErrorCreator(DirectoryParser(file_system_of_image.get_fat_handler()), file_system_of_image)
         error.make_error_in_fat_table(parsed_args.fat_num)
 
-    elif parsed_args.type_action == 'error_looped_file':
+    elif parsed_args.action_type == 'error_looped_file':
         error = ErrorCreator(DirectoryParser(file_system_of_image.get_fat_handler()), file_system_of_image)
-        try:
-            error.make_looped_file(parsed_args.folder)
-        except ValueError as ex:
-            print(ex.args[0], file=stderr)
+        error.make_looped_file(parsed_args.folder)
 
-    elif parsed_args.type_action == 'error_intersected_files':
+    elif parsed_args.action_type == 'error_intersected_files':
         error = ErrorCreator(DirectoryParser(file_system_of_image.get_fat_handler()), file_system_of_image)
-        try:
-            error.make_intersecting_files(parsed_args.folder)
-        except ValueError as error:
-            print(error.args[0], file=stderr)
+        error.make_intersecting_files(parsed_args.folder)
 
     print()
     print(f'Fragmentation: ~{int(get_info_about_fragmentation(file_system_of_image.get_fat_handler()))}%')
@@ -100,23 +97,25 @@ def main(parsed_args):
 
 
 class Argument:
-    def __init__(self, path: str, type_action: str):
+    def __init__(self, path: str, action_type: str, folder=''):
         self.path = path
-        self.type_action = type_action
+        self.action_type = action_type
+        self.folder = folder
 
 
 if __name__ == '__main__':
-    args = Argument('Images/fat16_test.vhd', 'fragmentation')
-    main(args)
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("path")
-    # parser.add_argument("type_action", choices=["fragmentation",
-    #                                             "defragmentation",
-    #                                             "error_fat_table",
-    #                                             "error_looped_file",
-    #                                             "error_intersecting_files"])
-    # parser.add_argument("-f", "--folder", type=str)
-    # parser.add_argument("-n", "--fat_num", type=int)
-    # parsed_args = parser.parse_args()
-    # main(parsed_args)
+    #args = Argument('Images/fat16_test.vhd', 'error_looped_files', 'FIRST      ')
+    #args = Argument('Images/fat32_test.vhd', 'defragmentation')
+    #main(args)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("path")
+    parser.add_argument("action_type", choices=["fragmentation",
+                                                "defragmentation",
+                                                "error_fat_table",
+                                                "error_looped_file",
+                                                "error_intersecting_files"])
+    parser.add_argument("-f", "--folder", type=str)
+    parser.add_argument("-n", "--fat_num", type=int)
+    parsed_args = parser.parse_args()
+    main(parsed_args)
 
